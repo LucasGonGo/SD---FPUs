@@ -65,6 +65,7 @@ always_comb begin
             mant_B_tmp = compare ? {1'b1,Op_B_in[20:0]} : {1'b1,Op_A_in[20:0]};  // armazena mant do outro em B
             exp_B_tmp  = compare ? (Op_B_in[30:21] - 511) : (Op_A_in[30:21] - 511);             // exp do outro em B
             sign_B_tmp = compare ? Op_B_in[31] : Op_A_in[31];                    // sinal do outro
+            diff_Exponent <= exp_A_tmp - exp_B_tmp;
 end
     
 
@@ -103,7 +104,6 @@ always_ff @(posedge clock_100Khz or negedge reset) begin
                 end
             end
             ALIGN: begin
-                diff_Exponent <= exp_A - exp_B; // pega a diferença dos expoentes e coloca mant_A e mant_B na mesma base, B sempre é o menor quando eles são diferentes
                 mant_B <= mant_B >> diff_Exponent; // shift right em mant_B para alinhar
                 $display("Mant_A: %b, Mant_B: %b, Exp_A: %d, Exp_B: %d, Diff_Exp: %d", mant_A, mant_B, exp_A, exp_B, diff_Exponent);
                 done_align <= 1;
