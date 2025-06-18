@@ -19,7 +19,7 @@ uint32_t floatToCustom(float value) {
     // Extrair expoente e mantissa normalizada
     int exp;
     float norm = std::frexp(absVal, &exp); // norm ∈ [0.5, 1.0)
-    
+
     // Converter expoente para bias-511 (10 bits)
     int biasedExp = exp + 510; // Bias 511
     if (biasedExp < 0 || biasedExp > 1023) {
@@ -36,27 +36,25 @@ uint32_t floatToCustom(float value) {
     return result;
 }
 
-// Função utilitária para imprimir como binário
 void printCustom(float value) {
     uint32_t encoded = floatToCustom(value);
     std::bitset<32> bits(encoded);
-    std::cout << value << " -> " << bits << std::endl;
+
+    uint32_t sign = (encoded >> 31) & 0x1;
+    uint32_t exp  = (encoded >> 21) & 0x3FF;      // 10 bits
+    uint32_t mant = (encoded & 0x1FFFFF);         // 21 bits
+
+    std::cout << "Valor:          " << value << std::endl;
+    std::cout << "Binário total:  " << bits << std::endl;
+    std::cout << "Sinal:          " << sign << std::endl;
+    std::cout << "Expoente (bias):" << exp << std::endl;
+    std::cout << "Mantissa (hex): 0x" << std::hex << mant << std::dec << std::endl;
+    std::cout << "Mantissa (bin): " << std::bitset<21>(mant) << std::endl;
 }
 
 int main() {
-    printCustom(2.0f);
-    printCustom(1.0f);
-    printCustom(5.75f);
-    printCustom(1.25f);
-    printCustom(3.0f);
-    printCustom(0.0f);
-    printCustom(-2.0f);
-    printCustom(1e10f);
-    printCustom(1e-10f);
-    printCustom(8.0f);
-    printCustom(-8.0f);
-    printCustom(4.5f);
-    printCustom(7.0f);
-    printCustom(-3.0f);
-    printCustom(1024.0f);
+    float aux;
+    std::cout << "Digite um valor em float: ";
+    std::cin >> aux;
+    printCustom(aux);
 }
