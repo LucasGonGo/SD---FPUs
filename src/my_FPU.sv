@@ -131,12 +131,12 @@ always_ff @(posedge clock_100Khz or negedge reset) begin
                         counter <= counter + 1;
                 end else begin
                     done_normalize  <= 1;
+                    sign_OUT  <= sign_A;
+                    mant_OUT  <= mant_TMP[20:0];
+                    exp_OUT   <= exp_TMP+511;
                 end 
             end
             WRITEBACK: begin
-                sign_OUT  <= sign_A;
-                    mant_OUT  <= mant_TMP[20:0];
-                    exp_OUT   <= exp_TMP+511;
                     data_out  <= {sign_OUT, exp_OUT, mant_OUT};
                     done_writeback <= 1;
 
