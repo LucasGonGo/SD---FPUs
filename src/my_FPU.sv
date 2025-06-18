@@ -96,18 +96,21 @@ always_ff @(posedge clock_100Khz or negedge reset) begin
 
                     start <= 0;
                     done_decode <= 1;
+                    $display("Mant_A: %b, Mant_B: %b, Exp_A: %d, Exp_B: %d, Diff_Exp: %d", mant_A, mant_B, exp_A, exp_B, diff_Exponent);
                 end
                 else begin 
                     start <= 1;
                 end
             end
             ALIGN: begin
-                diff_Exponent <= exp_A-exp_B; // pega a diferença dos expoentes e coloca mant_A e mant_B na mesma base, B sempre é o menor quando eles são diferentes
-                mant_B <= (mant_B >> diff_Exponent); // shift right em mant_B para alinhar
+                diff_Exponent <= exp_A - exp_B; // pega a diferença dos expoentes e coloca mant_A e mant_B na mesma base, B sempre é o menor quando eles são diferentes
+                mant_B <= mant_B >> diff_Exponent; // shift right em mant_B para alinhar
+                $display("Mant_A: %b, Mant_B: %b, Exp_A: %d, Exp_B: %d, Diff_Exp: %d", mant_A, mant_B, exp_A, exp_B, diff_Exponent);
                 done_align <= 1;
             end
             OPERATE: begin
-                if (sign_A == sign_B) begin                     
+                if (sign_A == sign_B) begin  
+                    $display("Mant_A: %b, Mant_B: %b, Exp_A: %d, Exp_B: %d, Diff_Exp: %d", mant_A, mant_B, exp_A, exp_B, diff_Exponent);
                         {carry, mant_TMP} <= mant_A + mant_B;   // soma se forem de sinais iguais, pega o bit carry por concatenação
                     end else begin
                         mant_TMP <= mant_A - mant_B;            // subtrai se forem de diferentes
