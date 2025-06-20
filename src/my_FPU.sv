@@ -24,7 +24,7 @@ module FPU(
 
 state_t EA, PE;
 
-logic sign_A, sign_B, carry;
+logic sign_A, sign_B, carry, sign_A_tmp, sign_B_tmp;
 logic compare;
 logic start;
 logic done_decode, done_align, done_operate, done_normalize, done_writeback;
