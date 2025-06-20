@@ -15,7 +15,7 @@ vlog -work work tb.sv
 vsim -voptargs=+acc work.tb
 
 # Abre a janela de waveform (opcional)
-add wave -r /*
+do wave.do
 
 # Roda a simulação por um tempo (ajuste conforme seu teste)
 run 10ns
