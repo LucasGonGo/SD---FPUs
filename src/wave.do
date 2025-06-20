@@ -6,8 +6,8 @@ add wave -noupdate -color {Blue Violet} /tb/rst
 add wave -noupdate -divider Entradas
 add wave -noupdate -radix binary /tb/send_A
 add wave -noupdate -radix binary /tb/send_B
-add wave -noupdate -divider SaiÃÂÃÂÃÂÃÂ­das
-add wave -noupdate -radix binary /tb/result
+add wave -noupdate -divider Saidas
+add wave -noupdate -radix hex /tb/result
 add wave -noupdate -radix binary /tb/op_status
 add wave -noupdate -divider Estados
 add wave -noupdate -radix binary /tb/dut/EA
