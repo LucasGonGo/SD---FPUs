@@ -123,14 +123,14 @@ always_ff @(posedge clock_100Khz or negedge reset) begin
             NORMALIZE: begin
                     if (mant_TMP == 0) begin
                         helper <= 1; 
-                    end else if (mant_TMP[21]) begin
-                        helper <= 1;
-                    end else begin
+                    end else if (!mant_TMP[21]) begin
                         mant_TMP <= mant_TMP << 1;
                         exp_TMP  <= exp_TMP - 1;
                         helper <= 0;
+                    end else begin
+                        helper <= 1;
                     end
-
+                    
                     if (helper == 1) begin
 
                         if (exp_TMP == 10'd0) begin
