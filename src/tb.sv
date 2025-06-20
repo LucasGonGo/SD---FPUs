@@ -14,7 +14,6 @@ module tb;
     logic [31:0] send_A;
     logic [31:0] send_B;
     logic [31:0] result;
-    status_t op_status;
  
 FPU dut(
      .clock_100Khz(clk),
