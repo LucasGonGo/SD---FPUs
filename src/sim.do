@@ -8,7 +8,7 @@ vlib work
 vmap work work
 
 # Compila os arquivos (mude os nomes para os seus arquivos .sv)
-vlog -work work FPU.sv
+vlog -work work my_FPU.sv
 vlog -work work tb.sv
 
 # Roda a simulação com otimização e acesso completo
