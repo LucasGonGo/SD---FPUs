@@ -118,7 +118,6 @@ always_ff @(posedge clock_100Khz or negedge reset) begin
                         mant_TMP <= (mant_TMP >> 1);
                         exp_TMP  <= exp_TMP + 1;
                     end
-                    counter <= 5'd0;
                     done_operate <= 1;
             end
             NORMALIZE: begin
@@ -133,7 +132,7 @@ always_ff @(posedge clock_100Khz or negedge reset) begin
                     end
 
                     if (helper == 1) begin
-                        
+
                         if (exp_TMP == 10'd0) begin
                         status_out <= UNDERFLOW;
                         end else if (exp_TMP == 10'd1023) begin
