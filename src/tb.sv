@@ -14,79 +14,94 @@ module tb;
     logic [31:0] send_A;
     logic [31:0] send_B;
     logic [31:0] result;
+    status_t op_status;
  
 FPU dut(
-     .clock_100Khz(clk),
-     .reset(rst), 
-     .Op_A_in(send_A),
-     .Op_B_in(send_B),
-     .data_out(result),
-     .status_out(op_status)
+    .clock_100Khz(clk),
+    .reset(rst), 
+    .Op_A_in(send_A),
+    .Op_B_in(send_B),
+    .data_out(result),
+    .status_out(op_status)
 );
 
 always begin #5; clk <= ~clk; end // periodo de 10 us, frequencia de 100KHz
 
+task apply_reset();
+begin
+    rst <= 0;
+    #10;
+    rst <= 1;
+    #10;
+end
+endtask
+
 initial begin
     // Reset inicial
-    rst <= 0;
-    #10 rst <= 1;
+    apply_reset();
 
-    // Teste 1: Soma de 2.0 + 1.0 = 0100 0000 0001 0000 0000 0000 0000 0000
-    //0X40100000
+    // Teste 1: Soma de 2.0 + 1.0
     send_A = {1'b0, 10'b1000000000, 21'b000000000000000000000}; // 2.0
     send_B = {1'b0, 10'b0111111111, 21'b000000000000000000000}; // 1.0
     #100;
-    
-    // Teste 2: Subtração 5.75 - 1.25 = 01000000001001000000000000000000
-    //0X40240
+
+    apply_reset();
+
+    // Teste 2: Subtração 5.75 - 1.25
     send_A = {1'b0, 10'b1000000001, 21'b000000000000000000000}; // 5.75
-    send_B = {1'b1, 10'b0111111111, 21'b010000000000000000000}; // 1.25 (0.25 mantissa = 010...)
+    send_B = {1'b1, 10'b0111111111, 21'b010000000000000000000}; // -1.25
     #100;
-    
-    // Teste 3: Soma com zero (3.0 + 0.0) = 01000000000100000000000000000000
-    //0X40100
+
+    apply_reset();
+
+    // Teste 3: Soma com zero (3.0 + 0.0)
     send_A = {1'b0, 10'b1000000000, 21'b100000000000000000000}; // 3.0
     send_B = {1'b0, 10'b0000000000, 21'b000000000000000000000}; // 0.0
     #100;
-    
-    // Teste 4: Subtração com zero (-2.0 + 0.0) = 11000000000000000000000000000000
-    //0Xc0000
+
+    apply_reset();
+
+    // Teste 4: Subtração com zero (-2.0 + 0.0)
     send_A = {1'b1, 10'b1000000000, 21'b000000000000000000000}; // -2.0
     send_B = {1'b0, 10'b0000000000, 21'b000000000000000000000}; // 0.0
     #100;
-    
-    
-    // Teste 5: Cancelamento total (8.0 + -8.0) = 0000000000000000000000000000000
-    //0X00000000
-    send_A = {1'b0, 10'b10000000010, 21'b000000000000000000000}; // 8.0
-    send_B = {1'b1, 10'b10000000010, 21'b000000000000000000000}; // -8.0
+
+    apply_reset();
+
+    // Teste 5: Cancelamento total (8.0 + -8.0)
+    send_A = {1'b0, 10'b1000000010, 21'b000000000000000000000}; // 8.0
+    send_B = {1'b1, 10'b1000000010, 21'b000000000000000000000}; // -8.0
     #100;
-    
-    // Teste 6: Soma de iguais (4.5 + 4.5) = 01000000010001000000000000000000
-    //0X40440
+
+    apply_reset();
+
+    // Teste 6: Soma de iguais (4.5 + 4.5)
     send_A = {1'b0, 10'b1000000001, 21'b001000000000000000000}; // 4.5
     send_B = {1'b0, 10'b1000000001, 21'b001000000000000000000}; // 4.5
     #100;
-    
-    // Teste 7: Soma de iguais negativos (-4.5 - 4.5) = 11000000010001000000000000000000
-    //0Xc0440
-    send_A = {1'b1, 10'b1000000001, 21'b001000000000000000000}; // 4.5
-    send_B = {1'b1, 10'b1000000001, 21'b001000000000000000000}; // 4.5
+
+    apply_reset();
+
+    // Teste 7: Soma de iguais negativos (-4.5 - 4.5)
+    send_A = {1'b1, 10'b1000000001, 21'b001000000000000000000}; // -4.5
+    send_B = {1'b1, 10'b1000000001, 21'b001000000000000000000}; // -4.5
     #100;
 
-    // Teste 7: Subtração parcial (7.0 + -3.0) = 01000000001000000000000000000000
-    //0X40200
+    apply_reset();
+
+    // Teste 8: Subtração parcial (7.0 + -3.0)
     send_A = {1'b0, 10'b1000000001, 21'b110000000000000000000}; // 7.0
     send_B = {1'b1, 10'b1000000000, 21'b100000000000000000000}; // -3.0
     #100;
-    
-    // Teste 8: Diferença de expoentes grande (1024.0 + 1.0) = 01000001001000000000100000000000
-    //0X41200
+
+    apply_reset();
+
+    // Teste 9: Diferença de expoentes grande (1024.0 + 1.0)
     send_A = {1'b0, 10'b1000001001, 21'b000000000000000000000}; // 1024.0
     send_B = {1'b0, 10'b0111111111, 21'b000000000000000000000}; // 1.0
     #100;
-    
-    
+
+    // Fim dos testes
 end
 
 endmodule
