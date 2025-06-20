@@ -17,13 +17,9 @@ add wave -noupdate /tb/dut/exp_A
 add wave -noupdate /tb/dut/exp_B
 add wave -noupdate /tb/dut/sign_A
 add wave -noupdate /tb/dut/sign_B
-add wave -noupdate /tb/dut/sign_OUT
 add wave -noupdate /tb/dut/carry
-add wave -noupdate /tb/dut/compare
 add wave -noupdate /tb/dut/mant_TMP
-add wave -noupdate /tb/dut/mant_OUT
 add wave -noupdate /tb/dut/exp_TMP
-add wave -noupdate /tb/dut/exp_OUT
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {28522011 ps} 0}
 quietly wave cursor active 1
