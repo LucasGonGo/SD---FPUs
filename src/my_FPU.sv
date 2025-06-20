@@ -59,11 +59,11 @@ end
 always_comb begin
             compare = (Op_A_in[30:21] >= Op_B_in[30:21])? 1'b1 : 1'b0; // ve qual é maior ou se são iguais
             mant_A_tmp = compare ? {1'b1,Op_A_in[20:0]} : {1'b1,Op_B_in[20:0]}; // armazena mant do maior em A
-            exp_A_tmp  = compare ? (Op_A_in[30:21] - 511) : (Op_B_in[30:21] - 511);             // exp do maior em A
+            exp_A_tmp  = compare ? (Op_A_in[30:21]) : (Op_B_in[30:21]);             // exp do maior em A
             sign_A_tmp = compare ? Op_A_in[31] : Op_B_in[31];                   // sinal do maior
 
             mant_B_tmp = compare ? {1'b1,Op_B_in[20:0]} : {1'b1,Op_A_in[20:0]};  // armazena mant do outro em B
-            exp_B_tmp  = compare ? (Op_B_in[30:21] - 511) : (Op_A_in[30:21] - 511);             // exp do outro em B
+            exp_B_tmp  = compare ? (Op_B_in[30:21]) : (Op_A_in[30:21]);             // exp do outro em B
             sign_B_tmp = compare ? Op_B_in[31] : Op_A_in[31];                    // sinal do outro
             diff_Exponent <= exp_A_tmp - exp_B_tmp;
 end
@@ -134,7 +134,7 @@ always_ff @(posedge clock_100Khz or negedge reset) begin
                 end 
             end
             WRITEBACK: begin
-                    data_out  <= {sign_A, (exp_TMP+511), mant_TMP[20:0]};
+                    data_out  <= {sign_A, (exp_TMP), mant_TMP[20:0]};
                     done_writeback <= 1;
 
                     if (exp_OUT == 10'd0)
