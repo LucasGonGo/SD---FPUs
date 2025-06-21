@@ -13,7 +13,7 @@ module FPU(
     input  logic [31:0] Op_A_in,
     input  logic [31:0] Op_B_in,
     output logic [31:0] data_out,
-    output logi    status_out
+    output logic  [3:0]  status_out
 );
 
     state_t EA, PE;
