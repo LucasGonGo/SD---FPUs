@@ -14,7 +14,7 @@ O sistema desenvolvido consiste em uma **FPU extremamente simplificada**, capaz 
 
 - 🧮 **FPU (Floating Point Unit)**  
   Opera com um **clock de 100 kHz** e **reset assíncrono ativo em nível baixo**.  
-  Realiza operações de soma e subtração entre as entradas `op_A_in` e `op_B_in`, fornecendo o resultado em `data_out` com um sinal de status `status_out`, responsável por expor informações adicionas sobre o resultado da operação.
+  Realiza operações de soma e subtração entre as entradas `op_A_in` e `op_B_in`, fornecendo o resultado em `data_out` com um sinal de status `status_out`, responsável por expor informações adicionais sobre o resultado da operação.
 
 ---
 
@@ -49,10 +49,10 @@ Onde:
 
 📌 **Cálculo de X e Y:**
 
-A matrícula utilizada foi **???**, então: 
+Usarei de exemplo a combinação **07764023-1**, então: 
 
- X = 10
- Y = 21
+- X = [8 - ((0+7+7+6+4+0+2+3+1)%4)] = 10  
+- Y = 31 - 10 = 21
 
 ---
 
@@ -60,27 +60,38 @@ A matrícula utilizada foi **???**, então:
 
 O sinal `status_out` possui **4 bits** para indicar o estado do resultado:
 
-| Bit  | Estado       | Descrição                                          |
-|----  |------------- |--------------------------------------------------- |
-| 0    | EXACT        | Resultado exato, sem necessidade de arredondamento |
-| 1    | OVERFLOW     | Resultado excedeu o intervalo representável        |
-| 2    | UNDERFLOW    | Resultado menor que o menor valor representável    |
-| 3    | INEXACT      | Resultado sofreu arredondamento                    |
+| Bit | Estado     | Descrição                                            |
+|------|------------|-----------------------------------------------------|
+| 0    | EXACT      | Resultado exato, sem necessidade de arredondamento  |
+| 1    | OVERFLOW   | Resultado excedeu o intervalo representável         |
+| 2    | UNDERFLOW  | Resultado menor que o menor valor representável     |
+| 3    | INEXACT    | Resultado sofreu arredondamento                      |
 
 ---
 
 ## ▶️ Execução do Projeto
 
-A simulação foi feita utilizando o **QuestaSim**.
+A simulação pode ser feita utilizando o **QuestaSim/ModelSim**.
 
 ### Passo a passo:
 
-1. Abra o terminal e navegue até a pasta do projeto.
+1. Abra o simulador, entre na pasta `src` do projeto.  
 2. Execute o seguinte comando para iniciar a simulação:
 
 ```tcl
 do sim.do
 ```
 
-- O script ***sim.do*** compila todos os arquivos necessários e inicia a visualização das formas de onda.
+- O script sim.do compila todos os arquivos necessários e inicia a visualização das formas de onda.
 
+
+---
+
+## 📁 Imagens
+
+As imagens relevantes para o projeto estão disponíveis na pasta [`images`](./images) do repositório.
+
+## 📚 Referências
+
+- [IEEE Floating Point Adder - GitHub](https://github.com/Ravi-2345/IEEE_754_FLOATING_POINT_ADDER/blob/main/IEEE_FPA.v)  
+- [IEEE 754 Addition Explained (Numeral Systems)](https://numeral--systems-com.translate.goog/ieee-754-add/?_x_tr_sl=en&_x_tr_tl=pt&_x_tr_hl=pt&_x_tr_pto=tc)
