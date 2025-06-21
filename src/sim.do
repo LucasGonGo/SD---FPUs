@@ -5,8 +5,8 @@ vmap work work
 vlog -work work my_FPU.sv
 vlog -work work tb.sv
 
-# Simulação SEM otimização para evitar o erro de _deps
-vsim -novopt work.tb
+# Rodar com otimização desativada de forma moderna
+vsim -O0 work.tb
 
 quietly set StdArithNoWarnings 1
 quietly set StdVitalGlitchNoWarnings 1
