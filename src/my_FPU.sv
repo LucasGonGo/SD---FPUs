@@ -28,7 +28,7 @@ module FPU(
     logic sign_A, sign_B, carry, carry_flag, compare;
     logic done_decode, done_align, done_operate, done_normalize, done_writeback;
 
-    logic [21:0] mant_A, mant_B, mant_SHIFT, mant_TMP, mant_A_tmp, mant_B_tmp;
+    logic [21:0] mant_A, mant_SHIFT, mant_B, mant_TMP, mant_A_tmp, mant_B_tmp;
     logic [9:0]  exp_A, exp_B, exp_TMP, exp_A_tmp, exp_B_tmp;
     logic [9:0]  diff_Exponent;
 
@@ -70,26 +70,27 @@ module FPU(
                 end
 
                 ALIGN: begin
-                    if (diff_Exponent > 0) begin
-                        mant_B        <= mant_B >> 1;
-                        diff_Exponent <= diff_Exponent - 1;
-                    end else begin
-                        done_align    <= 1;
-                        mant_SHIFT    <= mant_B;
-                    end
+                        mant_SHIFT   <= mant_B >> diff_Exponent;
+                        done_align   <= 1;
                 end
 
                 OPERATE: begin
                     if (sign_A == sign_B) begin
-                        {carry, mant_TMP} <= mant_A + mant_SHIFT;
+                            {carry, mant_TMP} <= mant_A + mant_SHIFT;
+                            exp_TMP <= exp_A;
                     end else begin
-                        mant_TMP <= mant_A - mant_SHIFT;
-                        carry    <= 0;
+                        if (mant_A >= mant_SHIFT) begin
+                            mant_TMP <= mant_A - mant_SHIFT;
+                            exp_TMP <= exp_A;
+                            carry <= 0;
+                        end else begin
+                            mant_TMP <= mant_SHIFT - mant_A;
+                            exp_TMP <= exp_A;
+                            carry <= 0;
+                            sign_A <= ~sign_A;
+                        end
                     end
-
-                    exp_TMP    <= exp_A;
                     carry_flag <= carry;
-
                     done_operate <= 1;
                 end
 
@@ -98,8 +99,8 @@ module FPU(
                         if (carry_flag) begin
                             mant_TMP <= mant_TMP >> 1;
                             exp_TMP  <= exp_TMP + 1;
-                            carry_flag <= 0;  // Clear after using
-                        end else if (!mant_TMP[21]) begin
+                            carry_flag <= 0;
+                        end else if (mant_TMP[21] == 0 && exp_TMP > 0) begin
                             mant_TMP <= mant_TMP << 1;
                             exp_TMP  <= exp_TMP - 1;
                         end else begin
@@ -111,10 +112,14 @@ module FPU(
                 WRITEBACK: begin
                     data_out <= {sign_A, exp_TMP, mant_TMP[20:0]};
 
-                    if (exp_TMP == 0)          status_out <= UNDERFLOW;
-                    else if (exp_TMP == 10'd1023) status_out <= OVERFLOW;
-                    else if (mant_TMP[20:0] == 0) status_out <= INEXACT;
-                    else                        status_out <= EXACT;
+                    if (exp_TMP == 10'd0 && mant_TMP[20:0] == 0)
+                        status_out <= EXACT; 
+                    else if (exp_TMP == 10'd0)
+                        status_out <= UNDERFLOW;
+                    else if (exp_TMP == 10'd1023)
+                        status_out <= OVERFLOW;
+                    else
+                        status_out <= EXACT;
 
                     done_writeback <= 1;
                 end
