@@ -6,29 +6,22 @@ typedef enum logic[3:0] {
     WRITEBACK
 } state_t;
 
-typedef enum logic[3:0] { 
-    OVERFLOW,
-    UNDERFLOW,
-    EXACT,
-    INEXACT
-} status_t;
-
 module FPU(
     input  logic        clock_100Khz,
     input  logic        reset,      // assíncrono ativo-baixo
     input  logic [31:0] Op_A_in,
     input  logic [31:0] Op_B_in,
     output logic [31:0] data_out,
-    output status_t     status_out
+    output logic [3:0]  status_out
 );
 
     state_t EA, PE;
 
     // Sinais auxiliares
-    logic sign_A, sign_B, carry, carry_flag, compare, sticky_bit;
+    logic sign_A, sign_B, carry, carry_flag, compare, sticky_bit, guard_bit, round_bit;
     logic done_decode, done_align, done_operate, done_normalize, done_writeback;
-
-    logic [21:0] mant_A, mant_SHIFT, mant_B, mant_TMP, mant_A_tmp, mant_B_tmp;
+    logic [23:0] mant_TMP_extended;
+    logic [21:0] mant_A, mant_B, mant_SHIFT, mant_A_tmp, mant_B_tmp;
     logic [9:0]  exp_A, exp_B, exp_TMP, exp_A_tmp, exp_B_tmp;
     logic [9:0]  diff_Exponent;
 
@@ -44,16 +37,16 @@ module FPU(
             mant_A         <= 0;
             mant_B         <= 0;
             mant_SHIFT     <= 0;
-            mant_TMP       <= 0;
             exp_A          <= 0;
             exp_B          <= 0;
             exp_TMP        <= 0;
             sign_A         <= 0;
             sign_B         <= 0;
             data_out       <= 0;
-            status_out     <= EXACT;
+            status_out     <= 0;
             diff_Exponent  <= 0;
             carry_flag     <= 0;
+            mant_TMP_extended <= 0;
         end else begin
             EA <= PE;
 
@@ -85,33 +78,26 @@ module FPU(
                     done_align <= 1;
                 end
 
-
                 OPERATE: begin
+                    logic [23:0] aligned_mant_B;
+                    aligned_mant_B = {mant_SHIFT, 2'b00};
+
+                    if (sticky_bit)
+                        aligned_mant_B[0] = 1'b1;
+
                     if (sign_A == sign_B) begin
-                            {carry, mant_TMP} <= mant_A + mant_SHIFT;
-
-                            if (sticky_bit && mant_TMP[0]) begin
-                                  mant_TMP <= mant_TMP + 1;
-                            end
-
-                            exp_TMP <= exp_A;
+                        {carry, mant_TMP_extended} <= {1'b0, mant_A, 2'b00} + aligned_mant_B;
                     end else begin
-                        if (mant_A == mant_SHIFT) begin
-                            mant_TMP <= 0;
-                            exp_TMP <= 0;
-                            sign_A   <= 0;
-                            carry    <= 0;
-                        end else if (mant_A >= mant_SHIFT) begin
-                            mant_TMP <= mant_A - mant_SHIFT;
-                            exp_TMP <= exp_A;
-                            carry <= 0;
+                        if (mant_A >= mant_SHIFT) begin
+                            mant_TMP_extended <= {1'b0, mant_A, 2'b00} - aligned_mant_B;
                         end else begin
-                            mant_TMP <= mant_SHIFT - mant_A;
-                            exp_TMP <= exp_A;
-                            carry <= 0;
+                            mant_TMP_extended <= aligned_mant_B - {1'b0, mant_A, 2'b00};
                             sign_A <= ~sign_A;
                         end
+                        carry <= 0;
                     end
+
+                    exp_TMP <= exp_A;
                     carry_flag <= carry;
                     done_operate <= 1;
                 end
@@ -119,12 +105,12 @@ module FPU(
                 NORMALIZE: begin
                     if (!done_normalize) begin
                         if (carry_flag) begin
-                            mant_TMP <= mant_TMP >> 1;
-                            exp_TMP  <= exp_TMP + 1;
+                            mant_TMP_extended <= mant_TMP_extended >> 1;
+                            exp_TMP <= exp_TMP + 1;
                             carry_flag <= 0;
-                        end else if (mant_TMP[21] == 0 && exp_TMP > 0) begin
-                            mant_TMP <= mant_TMP << 1;
-                            exp_TMP  <= exp_TMP - 1;
+                        end else if (mant_TMP_extended[23] == 0 && exp_TMP > 0) begin
+                            mant_TMP_extended <= mant_TMP_extended << 1;
+                            exp_TMP <= exp_TMP - 1;
                         end else begin
                             done_normalize <= 1;
                         end
@@ -132,16 +118,31 @@ module FPU(
                 end
 
                 WRITEBACK: begin
-                    data_out <= {sign_A, exp_TMP, mant_TMP[20:0]};
+                    guard_bit = mant_TMP_extended[1];
+                    round_bit = mant_TMP_extended[0];
 
-                    if (exp_TMP == 10'd0 && mant_TMP[20:0] == 0)
-                        status_out <= EXACT; 
-                    else if (exp_TMP == 10'd0)
-                        status_out <= UNDERFLOW;
-                    else if (exp_TMP == 10'd1023)
-                        status_out <= OVERFLOW;
-                    else
-                        status_out <= EXACT;
+                    // Arredondamento: Round to Nearest Even
+                    if (guard_bit && (round_bit || mant_TMP_extended[2])) begin
+                        mant_TMP_extended[23:2] <= mant_TMP_extended[23:2] + 1;
+                    end
+
+                    // Verifica overflow de mantissa após arredondamento
+                    if (mant_TMP_extended[22]) begin
+                        mant_TMP_extended <= mant_TMP_extended >> 1;
+                        exp_TMP <= exp_TMP + 1;
+                    end
+
+                    data_out <= {sign_A, exp_TMP, mant_TMP_extended[21:1]};
+
+                    if (exp_TMP == 10'd1023) begin
+                        status_out <= 4'd1;  // Overflow
+                    end else if (exp_TMP == 10'd0 && mant_TMP_extended[21:1] != 0) begin
+                        status_out <= 4'd2;  // Underflow
+                    end else if (guard_bit || round_bit || sticky_bit) begin
+                        status_out <= 4'd3;  // Inexact
+                    end else begin
+                        status_out <= 4'd0;  // Exact
+                    end
 
                     done_writeback <= 1;
                 end
