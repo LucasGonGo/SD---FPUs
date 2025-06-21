@@ -25,7 +25,7 @@ module FPU(
     state_t EA, PE;
 
     // Sinais auxiliares
-    logic sign_A, sign_B, carry, carry_flag, compare;
+    logic sign_A, sign_B, carry, carry_flag, compare, sticky_bit;
     logic done_decode, done_align, done_operate, done_normalize, done_writeback;
 
     logic [21:0] mant_A, mant_SHIFT, mant_B, mant_TMP, mant_A_tmp, mant_B_tmp;
@@ -70,16 +70,38 @@ module FPU(
                 end
 
                 ALIGN: begin
-                        mant_SHIFT   <= mant_B >> diff_Exponent;
-                        done_align   <= 1;
+                    if (diff_Exponent != 0) begin
+                        if (diff_Exponent > 22) begin
+                            mant_SHIFT <= 0;
+                            sticky_bit <= 1;  
+                        end else begin
+                            mant_SHIFT <= mant_B >> diff_Exponent;
+                            sticky_bit <= |(mant_B & ((1 << diff_Exponent) - 1));
+                        end
+                    end else begin
+                        mant_SHIFT <= mant_B;
+                        sticky_bit <= 0;
+                    end
+                    done_align <= 1;
                 end
+
 
                 OPERATE: begin
                     if (sign_A == sign_B) begin
                             {carry, mant_TMP} <= mant_A + mant_SHIFT;
+
+                            if (sticky_bit && mant_TMP[0]) begin
+                                  mant_TMP <= mant_TMP + 1;
+                            end
+                            
                             exp_TMP <= exp_A;
                     end else begin
-                        if (mant_A >= mant_SHIFT) begin
+                        if (mant_A == mant_SHIFT) begin
+                            mant_TMP <= 0;
+                            exp_TMP <= 0;
+                            sign_A   <= 0;
+                            carry    <= 0
+                        end else if (mant_A >= mant_SHIFT) begin
                             mant_TMP <= mant_A - mant_SHIFT;
                             exp_TMP <= exp_A;
                             carry <= 0;
