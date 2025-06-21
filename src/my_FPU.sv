@@ -24,45 +24,52 @@ module FPU(
 
     state_t EA, PE;
 
-    // sinais auxiliares
-    logic sign_A, sign_B, carry, compare;
+    // Sinais auxiliares
+    logic sign_A, sign_B, carry, carry_flag, compare;
     logic done_decode, done_align, done_operate, done_normalize, done_writeback;
 
-    // campos de mantissa e expoente
     logic [21:0] mant_A, mant_B, mant_SHIFT, mant_TMP, mant_A_tmp, mant_B_tmp;
     logic [9:0]  exp_A, exp_B, exp_TMP, exp_A_tmp, exp_B_tmp;
     logic [9:0]  diff_Exponent;
 
-    // FSM sequencial
+    // FSM Sequencial
     always_ff @(posedge clock_100Khz or negedge reset) begin
         if (!reset) begin
             EA             <= DECODE;
-            // reset flags e regs
-            done_decode    <= 0; done_align <= 0; done_operate <= 0;
-            done_normalize <= 0; done_writeback <= 0;
-            mant_A         <= 0; mant_B <= 0; mant_SHIFT <= 0; mant_TMP<=0;
-            exp_A          <= 0; exp_B<=0; exp_TMP<=0;
-            sign_A         <= 0; sign_B<=0;
-            data_out       <= 0; status_out <= EXACT;
+            done_decode    <= 0;
+            done_align     <= 0;
+            done_operate   <= 0;
+            done_normalize <= 0;
+            done_writeback <= 0;
+            mant_A         <= 0;
+            mant_B         <= 0;
+            mant_SHIFT     <= 0;
+            mant_TMP       <= 0;
+            exp_A          <= 0;
+            exp_B          <= 0;
+            exp_TMP        <= 0;
+            sign_A         <= 0;
+            sign_B         <= 0;
+            data_out       <= 0;
+            status_out     <= EXACT;
             diff_Exponent  <= 0;
+            carry_flag     <= 0;
         end else begin
             EA <= PE;
-            // ações de cada estado
+
             case (EA)
                 DECODE: begin
-                    // Prepara A e B e difere expoente
                     mant_A      <= mant_A_tmp;
                     exp_A       <= exp_A_tmp;
                     sign_A      <= compare ? Op_A_in[31] : Op_B_in[31];
                     mant_B      <= mant_B_tmp;
                     exp_B       <= exp_B_tmp;
                     sign_B      <= compare ? Op_B_in[31] : Op_A_in[31];
-                    diff_Exponent<= exp_A_tmp - exp_B_tmp;
+                    diff_Exponent <= exp_A_tmp - exp_B_tmp;
                     done_decode <= 1;
                 end
 
                 ALIGN: begin
-                    // Repete shift até diff=0
                     if (diff_Exponent > 0) begin
                         mant_B        <= mant_B >> 1;
                         diff_Exponent <= diff_Exponent - 1;
@@ -73,21 +80,26 @@ module FPU(
                 end
 
                 OPERATE: begin
-                    // usa mant_SHIFT já alinhado
-                    if (sign_A == sign_B) {carry, mant_TMP} <= mant_A + mant_SHIFT;
-                    else                  mant_TMP         <= mant_A - mant_SHIFT;
-                    exp_TMP <= exp_A;
-                    if (carry) begin
-                        mant_TMP <= mant_TMP >> 1;
-                        exp_TMP  <= exp_TMP + 1;
+                    if (sign_A == sign_B) begin
+                        {carry, mant_TMP} <= mant_A + mant_SHIFT;
+                    end else begin
+                        mant_TMP <= mant_A - mant_SHIFT;
+                        carry    <= 0;
                     end
+
+                    exp_TMP    <= exp_A;
+                    carry_flag <= carry;
+
                     done_operate <= 1;
                 end
 
                 NORMALIZE: begin
-                    // shift left até MSB em bit21
                     if (!done_normalize) begin
-                        if (!mant_TMP[21]) begin
+                        if (carry_flag) begin
+                            mant_TMP <= mant_TMP >> 1;
+                            exp_TMP  <= exp_TMP + 1;
+                            carry_flag <= 0;  // Clear after using
+                        end else if (!mant_TMP[21]) begin
                             mant_TMP <= mant_TMP << 1;
                             exp_TMP  <= exp_TMP - 1;
                         end else begin
@@ -97,18 +109,20 @@ module FPU(
                 end
 
                 WRITEBACK: begin
-                    data_out       <= {sign_A, exp_TMP, mant_TMP[20:0]};
-                    if      (exp_TMP == 0)            status_out <= UNDERFLOW;
-                    else if (exp_TMP == 10'd1023)     status_out <= OVERFLOW;
-                    else if (mant_TMP[20:0] == 0)     status_out <= INEXACT;
-                    else                               status_out <= EXACT;
+                    data_out <= {sign_A, exp_TMP, mant_TMP[20:0]};
+
+                    if (exp_TMP == 0)          status_out <= UNDERFLOW;
+                    else if (exp_TMP == 10'd1023) status_out <= OVERFLOW;
+                    else if (mant_TMP[20:0] == 0) status_out <= INEXACT;
+                    else                        status_out <= EXACT;
+
                     done_writeback <= 1;
                 end
             endcase
         end
     end
 
-    // FSM combinacional
+    // FSM Combinacional
     always_comb begin
         PE = EA;
         case (EA)
@@ -121,13 +135,13 @@ module FPU(
         endcase
     end
 
-    // separação de campos
+    // Separação de campos
     always_comb begin
         compare    = (Op_A_in[30:21] >= Op_B_in[30:21]);
         mant_A_tmp = compare ? {1'b1, Op_A_in[20:0]} : {1'b1, Op_B_in[20:0]};
-        exp_A_tmp  = compare ? Op_A_in[30:21]       : Op_B_in[30:21];
+        exp_A_tmp  = compare ? Op_A_in[30:21]        : Op_B_in[30:21];
         mant_B_tmp = compare ? {1'b1, Op_B_in[20:0]} : {1'b1, Op_A_in[20:0]};
-        exp_B_tmp  = compare ? Op_B_in[30:21]       : Op_A_in[30:21];
+        exp_B_tmp  = compare ? Op_B_in[30:21]        : Op_A_in[30:21];
     end
 
 endmodule
