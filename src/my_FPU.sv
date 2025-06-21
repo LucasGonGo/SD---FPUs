@@ -46,7 +46,6 @@ module FPU(
             sign_A         <= 0;
             sign_B         <= 0;
             data_out       <= 0;
-            status_out     <= EXACT;
             diff_Exponent  <= 0;
             carry_flag     <= 0;
         end else begin
