@@ -1,12 +1,5 @@
 `timescale 1us/1ps
 
-typedef enum logic[3:0] { 
-    OVERFLOW,
-    UNDERFLOW,
-    EXACT,
-    INEXACT
-} status_t;
-
 module tb;
 
     logic clk = 0;
@@ -14,6 +7,7 @@ module tb;
     logic [31:0] send_A;
     logic [31:0] send_B;
     logic [31:0] result;
+    logic [3:0] op_status;
  
 FPU dut(
     .clock_100Khz(clk),
