@@ -93,14 +93,14 @@ module FPU(
                             if (sticky_bit && mant_TMP[0]) begin
                                   mant_TMP <= mant_TMP + 1;
                             end
-                            
+
                             exp_TMP <= exp_A;
                     end else begin
                         if (mant_A == mant_SHIFT) begin
                             mant_TMP <= 0;
                             exp_TMP <= 0;
                             sign_A   <= 0;
-                            carry    <= 0
+                            carry    <= 0;
                         end else if (mant_A >= mant_SHIFT) begin
                             mant_TMP <= mant_A - mant_SHIFT;
                             exp_TMP <= exp_A;
