@@ -27,10 +27,6 @@ FPU dut(
 
 always begin #5; clk <= ~clk; end // periodo de 10 us, frequencia de 100KHz
 
-    rst <= 0;
-    #10;
-    rst <= 1;
-  
 
 
 initial begin
