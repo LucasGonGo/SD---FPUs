@@ -1,5 +1,0 @@
-https://github.com/Ravi-2345/IEEE_754_FLOATING_POINT_ADDER/blob/main/IEEE_FPA.v
-
-https://github.com/adityaraj543210/IEEE754_ADDITION/blob/main/IEEE754_ADDITON.cpp
-
-https://numeral--systems-com.translate.goog/ieee-754-add/?_x_tr_sl=en&_x_tr_tl=pt&_x_tr_hl=pt&_x_tr_pto=tc
